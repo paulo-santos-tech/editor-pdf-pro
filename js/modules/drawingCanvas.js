@@ -44,9 +44,16 @@ window.PDFStudio.Drawing = {
     });
   },
 
-  toggleDrawingMode() {
+  toggleDrawingMode(forceState) {
     const state = window.PDFStudio.State;
-    state.isDrawingMode = !state.isDrawingMode;
+    state.isDrawingMode = (typeof forceState === 'boolean') ? forceState : !state.isDrawingMode;
+
+    if (state.isDrawingMode) {
+      if (state.isEraserMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleEraserMode(false);
+      if (state.isWhiteoutMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleWhiteoutMode(false);
+      if (state.isFontPickerActive && window.PDFStudio.FontDetector) window.PDFStudio.FontDetector.toggleFontPicker(false);
+      if (state.isInsertMode && window.PDFStudio.TextEditor) window.PDFStudio.TextEditor.toggleInsertMode(false);
+    }
 
     const btnToggleDraw = document.getElementById('btn-toggle-draw');
     if (btnToggleDraw) {

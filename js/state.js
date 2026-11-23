@@ -255,7 +255,7 @@ window.PDFStudio.State = {
 
     Object.keys(this.pageFilters).forEach(p => {
       const f = this.pageFilters[p];
-      if (f && (f.brightness !== 0 || f.contrast !== 0 || f.binarize || f.grayscale)) totalChanges++;
+      if (f && (f.brightness !== 100 || f.contrast !== 100 || f.binarize || f.grayscale)) totalChanges++;
     });
 
     totalChanges += this.deletedPages.size;

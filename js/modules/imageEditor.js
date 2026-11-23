@@ -18,6 +18,7 @@ window.PDFStudio.ImageEditor = {
   init() {
     this._bindToolbarButtons();
     this._bindWhiteoutCanvasEvents();
+    this._bindEraserEvents();
     this._bindFilterModalEvents();
     this._bindOcrEvents();
   },
@@ -297,8 +298,9 @@ window.PDFStudio.ImageEditor = {
 
     if (state.isEraserMode) {
       if (state.isWhiteoutMode) this.toggleWhiteoutMode(false);
-      if (state.isDrawingMode && window.PDFStudio.Drawing) window.PDFStudio.Drawing.toggleDrawingMode();
+      if (state.isDrawingMode && window.PDFStudio.Drawing) window.PDFStudio.Drawing.toggleDrawingMode(false);
       if (state.isFontPickerActive && window.PDFStudio.FontDetector) window.PDFStudio.FontDetector.toggleFontPicker(false);
+      if (state.isInsertMode && window.PDFStudio.TextEditor) window.PDFStudio.TextEditor.toggleInsertMode(false);
     }
 
     const btnEraser = document.getElementById('btn-toggle-eraser');
@@ -316,11 +318,10 @@ window.PDFStudio.ImageEditor = {
 
     if (state.isEraserMode) {
       window.PDFStudio.Utils.showToast('Pincel Borracha Ativo: Pinte sobre qualquer mancha ou texto indesejado para apagar.', 'info');
-      this._setupEraserDrawing();
     }
   },
 
-  _setupEraserDrawing() {
+  _bindEraserEvents() {
     const drawCanvas = document.getElementById('draw-canvas');
     if (!drawCanvas) return;
 
@@ -349,7 +350,7 @@ window.PDFStudio.ImageEditor = {
       activeStroke.push({ x: pt.x / state.zoom, y: pt.y / state.zoom });
 
       const ctx = drawCanvas.getContext('2d');
-      ctx.strokeStyle = '#ffffff'; // Cor de cobertura branca padrão
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = (state.eraserSize || 20) * state.zoom;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -382,9 +383,31 @@ window.PDFStudio.ImageEditor = {
       activeStroke = [];
     };
 
-    drawCanvas.onmousedown = startErasing;
-    drawCanvas.onmousemove = moveErasing;
+    // Mouse listeners
+    drawCanvas.addEventListener('mousedown', startErasing);
+    drawCanvas.addEventListener('mousemove', moveErasing);
     window.addEventListener('mouseup', stopErasing);
+
+    // Touch listeners (Mobile & Tablet)
+    drawCanvas.addEventListener('touchstart', (e) => {
+      if (window.PDFStudio.State.isEraserMode) {
+        e.preventDefault();
+        startErasing(e);
+      }
+    }, { passive: false });
+
+    drawCanvas.addEventListener('touchmove', (e) => {
+      if (window.PDFStudio.State.isEraserMode) {
+        e.preventDefault();
+        moveErasing(e);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      if (window.PDFStudio.State.isEraserMode) {
+        stopErasing();
+      }
+    });
   },
 
   renderEraserStrokesForPage(pageNum) {
@@ -448,6 +471,17 @@ window.PDFStudio.ImageEditor = {
   closeFiltersModal() {
     const modal = document.getElementById('modal-image-filters');
     if (modal) modal.classList.add('hidden');
+
+    // Descarta alterações não salvas de preview e restaura visualização da página
+    const state = window.PDFStudio.State;
+    const canvas = document.getElementById('pdf-render-canvas');
+    if (canvas && window.PDFStudio.Renderer && window.PDFStudio.Renderer.pristineImageData) {
+      canvas.getContext('2d').putImageData(window.PDFStudio.Renderer.pristineImageData, 0, 0);
+      const savedFilters = state.pageFilters[state.currentPage];
+      if (savedFilters) {
+        this.applyFiltersToCanvas(canvas, savedFilters);
+      }
+    }
   },
 
   _bindFilterModalEvents() {
@@ -552,14 +586,34 @@ window.PDFStudio.ImageEditor = {
     if (!canvas || !filters) return;
     const ctx = canvas.getContext('2d');
 
-    // 1. Aplica CSS Filters para brilho, contraste e escala de cinza
-    let filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
-    if (filters.grayscale) filterString += ` grayscale(100%)`;
+    // Restaura a imagem original limpa antes de aplicar qualquer filtro (evita compound cumulativo)
+    const pristine = window.PDFStudio.Renderer ? window.PDFStudio.Renderer.pristineImageData : null;
+    if (pristine) {
+      ctx.putImageData(pristine, 0, 0);
+    }
 
-    ctx.save();
-    ctx.filter = filterString;
-    ctx.drawImage(canvas, 0, 0);
-    ctx.restore();
+    // Se todos os filtros estão no padrão natural, não requer processamento adicional
+    if (filters.brightness === 100 && filters.contrast === 100 && !filters.grayscale && !filters.binarize) {
+      return;
+    }
+
+    // 1. Aplica CSS Filters para brilho, contraste e escala de cinza usando canvas temporário
+    if (filters.brightness !== 100 || filters.contrast !== 100 || filters.grayscale) {
+      let filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
+      if (filters.grayscale) filterString += ` grayscale(100%)`;
+
+      const tempC = document.createElement('canvas');
+      tempC.width = canvas.width;
+      tempC.height = canvas.height;
+      const tCtx = tempC.getContext('2d');
+      tCtx.drawImage(canvas, 0, 0);
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.filter = filterString;
+      ctx.drawImage(tempC, 0, 0);
+      ctx.restore();
+    }
 
     // 2. Binarização inteligente (Limiar P&B para fotos de documentos/escaneamentos)
     if (filters.binarize) {

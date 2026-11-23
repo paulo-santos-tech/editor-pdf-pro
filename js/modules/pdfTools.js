@@ -338,7 +338,7 @@ window.PDFStudio.Tools = {
 
         tempCanvas.toBlob((blob) => {
           if (blob) {
-            const baseName = state.fileName.replace('.pdf', '');
+            const baseName = state.fileName.replace(/\.[^/.]+$/, "");
             window.PDFStudio.Utils.downloadBlob(blob, `${baseName}_pag_${state.currentPage}.png`);
             window.PDFStudio.Utils.showToast('Página salva como imagem PNG!');
           }
@@ -368,7 +368,7 @@ window.PDFStudio.Tools = {
           }
 
           const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-          const baseName = state.fileName.replace('.pdf', '');
+          const baseName = state.fileName.replace(/\.[^/.]+$/, "");
           window.PDFStudio.Utils.downloadBlob(blob, `${baseName}_texto.txt`);
           window.PDFStudio.Utils.showToast('Texto puro extraído com sucesso!');
         } catch (err) {

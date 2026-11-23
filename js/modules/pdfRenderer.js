@@ -9,6 +9,7 @@ window.PDFStudio.Renderer = {
   pageContainer: null,
   editOverlay: null,
   currentRenderTask: null,
+  pristineImageData: null,
 
   init() {
     this.canvas = document.getElementById('pdf-render-canvas');
@@ -163,6 +164,13 @@ window.PDFStudio.Renderer = {
       this.currentRenderTask = page.render({ canvasContext: ctx, viewport: viewport });
       await this.currentRenderTask.promise;
       this.currentRenderTask = null;
+
+      // Guarda uma cópia limpa da renderização da página para filtros não destrutivos
+      try {
+        this.pristineImageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      } catch (imgErr) {
+        this.pristineImageData = null;
+      }
 
       // Renderiza anotações de caneta
       if (window.PDFStudio.Drawing) {

@@ -234,9 +234,46 @@ window.PDFStudio.Overlay = {
     let isResizing = false;
     let startX, startY, initX, initY, initW, initH;
 
-    // --- ARRASTAR ---
-    function onDragStart(e) {
-      if (state.isDrawingMode || state.isInsertMode) return;
+    const onPointerMove = (e) => {
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+      if (isDragging) {
+        const dx = cx - startX;
+        const dy = cy - startY;
+        const newLeft = Math.max(0, initX + dx);
+        const newTop = Math.max(0, initY + dy);
+        el.style.left = `${newLeft}px`;
+        el.style.top = `${newTop}px`;
+        item.x = newLeft / state.zoom;
+        item.y = newTop / state.zoom;
+      } else if (isResizing) {
+        const dw = cx - startX;
+        const dh = cy - startY;
+        const newWidth = Math.max(30, initW + dw);
+        const newHeight = Math.max(20, initH + dh);
+        el.style.width = `${newWidth}px`;
+        el.style.height = `${newHeight}px`;
+        item.width = newWidth / state.zoom;
+        item.height = newHeight / state.zoom;
+      }
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('mousemove', onPointerMove);
+      window.removeEventListener('mouseup', onPointerUp);
+      window.removeEventListener('touchmove', onPointerMove);
+      window.removeEventListener('touchend', onPointerUp);
+
+      if (isDragging || isResizing) {
+        isDragging = false;
+        isResizing = false;
+        state.recordState();
+      }
+    };
+
+    const onDragStart = (e) => {
+      if (state.isDrawingMode || state.isInsertMode || state.isEraserMode || state.isWhiteoutMode) return;
       isDragging = true;
       document.querySelectorAll('.overlay-element').forEach(o => o.classList.remove('selected'));
       el.classList.add('selected');
@@ -247,33 +284,15 @@ window.PDFStudio.Overlay = {
       startY = cy;
       initX = item.x * state.zoom;
       initY = item.y * state.zoom;
+
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      window.addEventListener('touchmove', onPointerMove, { passive: false });
+      window.addEventListener('touchend', onPointerUp);
       e.stopPropagation();
-    }
+    };
 
-    function onDragMove(e) {
-      if (!isDragging) return;
-      const cx = e.touches ? e.touches[0].clientX : e.clientX;
-      const cy = e.touches ? e.touches[0].clientY : e.clientY;
-      const dx = cx - startX;
-      const dy = cy - startY;
-
-      const newLeft = Math.max(0, initX + dx);
-      const newTop = Math.max(0, initY + dy);
-      el.style.left = `${newLeft}px`;
-      el.style.top = `${newTop}px`;
-      item.x = newLeft / state.zoom;
-      item.y = newTop / state.zoom;
-    }
-
-    function onDragEnd() {
-      if (isDragging) {
-        isDragging = false;
-        state.recordState();
-      }
-    }
-
-    // --- REDIMENSIONAR ---
-    function onResizeStart(e) {
+    const onResizeStart = (e) => {
       isResizing = true;
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       const cy = e.touches ? e.touches[0].clientY : e.clientY;
@@ -281,62 +300,20 @@ window.PDFStudio.Overlay = {
       startY = cy;
       initW = item.width * state.zoom;
       initH = item.height * state.zoom;
+
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      window.addEventListener('touchmove', onPointerMove, { passive: false });
+      window.addEventListener('touchend', onPointerUp);
       e.stopPropagation();
-      e.preventDefault();
-    }
+      if (e.cancelable) e.preventDefault();
+    };
 
-    function onResizeMove(e) {
-      if (!isResizing) return;
-      const cx = e.touches ? e.touches[0].clientX : e.clientX;
-      const cy = e.touches ? e.touches[0].clientY : e.clientY;
-      const dw = cx - startX;
-      const dh = cy - startY;
-
-      const newWidth = Math.max(30, initW + dw);
-      const newHeight = Math.max(20, initH + dh);
-
-      el.style.width = `${newWidth}px`;
-      el.style.height = `${newHeight}px`;
-
-      item.width = newWidth / state.zoom;
-      item.height = newHeight / state.zoom;
-    }
-
-    function onResizeEnd() {
-      if (isResizing) {
-        isResizing = false;
-        state.recordState();
-      }
-    }
-
-    // Attach drag events
     el.addEventListener('mousedown', onDragStart);
     el.addEventListener('touchstart', onDragStart, { passive: true });
 
-    // Attach resize events
     resizeHandle.addEventListener('mousedown', onResizeStart);
     resizeHandle.addEventListener('touchstart', onResizeStart, { passive: false });
-
-    // Window events
-    window.addEventListener('mousemove', (e) => {
-      if (isDragging) onDragMove(e);
-      if (isResizing) onResizeMove(e);
-    });
-
-    window.addEventListener('touchmove', (e) => {
-      if (isDragging) onDragMove(e);
-      if (isResizing) onResizeMove(e);
-    }, { passive: true });
-
-    window.addEventListener('mouseup', () => {
-      onDragEnd();
-      onResizeEnd();
-    });
-
-    window.addEventListener('touchend', () => {
-      onDragEnd();
-      onResizeEnd();
-    });
   }
 };
 

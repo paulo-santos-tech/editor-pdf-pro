@@ -327,20 +327,35 @@ window.PDFStudio.TextEditor = {
     }
   },
 
+  toggleInsertMode(forceState) {
+    const state = window.PDFStudio.State;
+    state.isInsertMode = (typeof forceState === 'boolean') ? forceState : !state.isInsertMode;
+
+    if (state.isInsertMode) {
+      if (state.isEraserMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleEraserMode(false);
+      if (state.isWhiteoutMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleWhiteoutMode(false);
+      if (state.isDrawingMode && window.PDFStudio.Drawing) window.PDFStudio.Drawing.toggleDrawingMode(false);
+      if (state.isFontPickerActive && window.PDFStudio.FontDetector) window.PDFStudio.FontDetector.toggleFontPicker(false);
+    }
+
+    const btnAddText = document.getElementById('btn-add-text');
+    if (btnAddText) {
+      btnAddText.classList.toggle('bg-indigo-100', state.isInsertMode);
+      btnAddText.classList.toggle('text-indigo-700', state.isInsertMode);
+    }
+    if (this.editOverlay) {
+      this.editOverlay.classList.toggle('insert-mode', state.isInsertMode);
+    }
+
+    if (state.isInsertMode) {
+      window.PDFStudio.Utils.showToast('Clique em qualquer lugar da folha para escrever.', 'info');
+    }
+  },
+
   _bindInsertModeEvents() {
     const btnAddText = document.getElementById('btn-add-text');
     if (btnAddText) {
-      btnAddText.addEventListener('click', () => {
-        const state = window.PDFStudio.State;
-        state.isInsertMode = !state.isInsertMode;
-        btnAddText.classList.toggle('bg-indigo-100', state.isInsertMode);
-        btnAddText.classList.toggle('text-indigo-700', state.isInsertMode);
-        this.editOverlay.classList.toggle('insert-mode', state.isInsertMode);
-
-        if (state.isInsertMode) {
-          window.PDFStudio.Utils.showToast('Clique em qualquer lugar da folha para escrever.', 'info');
-        }
-      });
+      btnAddText.addEventListener('click', () => this.toggleInsertMode());
     }
 
     if (this.editOverlay) {
@@ -451,7 +466,10 @@ window.PDFStudio.TextEditor = {
     el.innerText = itemObj.currentText;
 
     el.addEventListener('focus', () => this.selectBlock(itemObj.index));
-    el.addEventListener('input', () => this.handleTextChange(itemObj.index, el.innerText));
+    el.addEventListener('input', () => this.handleTextChange(itemObj.index, el.innerText, false));
+    el.addEventListener('blur', () => {
+      window.PDFStudio.State.recordState();
+    });
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -502,7 +520,7 @@ window.PDFStudio.TextEditor = {
     return state.currentItems.find(it => it.index === state.selectedItemIndex);
   },
 
-  handleTextChange(index, newText) {
+  handleTextChange(index, newText, shouldRecord = true) {
     const state = window.PDFStudio.State;
     const item = state.currentItems.find(it => it.index === index);
     if (!item) return;
@@ -520,7 +538,9 @@ window.PDFStudio.TextEditor = {
 
     state.updateStatusBadge();
     this.updateSidebarItem(index, newText, isChanged);
-    state.recordState();
+    if (shouldRecord) {
+      state.recordState();
+    }
   },
 
   syncModificationObject(item) {

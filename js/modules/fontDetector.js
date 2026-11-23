@@ -53,6 +53,13 @@ window.PDFStudio.FontDetector = {
     const state = window.PDFStudio.State;
     state.isFontPickerActive = (typeof forceState === 'boolean') ? forceState : !state.isFontPickerActive;
 
+    if (state.isFontPickerActive) {
+      if (state.isEraserMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleEraserMode(false);
+      if (state.isWhiteoutMode && window.PDFStudio.ImageEditor) window.PDFStudio.ImageEditor.toggleWhiteoutMode(false);
+      if (state.isDrawingMode && window.PDFStudio.Drawing) window.PDFStudio.Drawing.toggleDrawingMode(false);
+      if (state.isInsertMode && window.PDFStudio.TextEditor) window.PDFStudio.TextEditor.toggleInsertMode(false);
+    }
+
     if (this.btnFontPicker) {
       this.btnFontPicker.classList.toggle('tool-btn-active', state.isFontPickerActive);
       this.btnFontPicker.classList.toggle('bg-blue-600', state.isFontPickerActive);
