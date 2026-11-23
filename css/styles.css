@@ -1,0 +1,292 @@
+/* ========================================================
+   PDF STUDIO PRO - DESIGN SYSTEM & ESTILOS MODULARES
+   ======================================================== */
+
+* {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Transições suaves globais */
+button, input, select {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Container da página PDF */
+.page-container {
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  user-select: none;
+  transition: width 0.15s ease, height 0.15s ease;
+}
+
+/* Camada interativa de edição */
+.edit-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.edit-layer.insert-mode {
+  cursor: crosshair !important;
+}
+
+/* Blocos de texto editáveis */
+.text-block-item {
+  position: absolute;
+  cursor: text;
+  border: 1px dashed rgba(59, 130, 246, 0.5);
+  background-color: rgba(239, 246, 255, 0.35);
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  outline: none;
+  white-space: pre;
+  line-height: 1.15;
+  padding: 1px 4px;
+  box-sizing: border-box;
+  transform-origin: 0 0;
+  border-radius: 4px;
+}
+
+.text-block-item:hover {
+  background-color: rgba(219, 234, 254, 0.85);
+  border-color: #2563eb;
+  z-index: 25;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.text-block-item:focus,
+.text-block-item.is-active {
+  background-color: #ffffff !important;
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+  z-index: 50;
+}
+
+.text-block-item.is-modified {
+  background-color: #ffffff !important;
+  border: 1.5px solid #059669 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.text-block-item.is-new-block {
+  border: 1.5px dashed #7c3aed !important;
+  background-color: rgba(245, 243, 255, 0.95) !important;
+}
+
+/* Elementos visuais sobrepostos (Imagens e Assinaturas) */
+.overlay-element {
+  position: absolute;
+  cursor: grab;
+  border: 2px dashed #3b82f6;
+  box-sizing: border-box;
+  user-select: none;
+  z-index: 35;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.overlay-element:active {
+  cursor: grabbing;
+}
+
+.overlay-element.selected {
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3), 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.overlay-delete-btn {
+  position: absolute;
+  top: -11px;
+  right: -11px;
+  background-color: #ef4444;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 45;
+  border: 2px solid #ffffff;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.overlay-delete-btn:hover {
+  background-color: #dc2626;
+  transform: scale(1.15);
+}
+
+/* Alça de redimensionamento nos cantos */
+.overlay-resize-handle {
+  position: absolute;
+  bottom: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  background-color: #2563eb;
+  border: 2.5px solid #ffffff;
+  border-radius: 50%;
+  cursor: se-resize;
+  z-index: 45;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.overlay-resize-handle:hover {
+  transform: scale(1.25);
+  background-color: #1d4ed8;
+}
+
+/* Drawer para Mobile */
+.mobile-drawer {
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollbars refinadas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Canvas de anotações à mão livre */
+#draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+#draw-canvas.drawing-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* Menu Dropdown de Ferramentas - Garantia de Alta Prioridade */
+#tools-dropdown {
+  z-index: 9999 !important;
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Efeito nos botões de toggle ativos */
+.tool-btn-active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* Modais com animação suave de abertura */
+.modal-content-animated {
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ========================================================
+   Tarjas de Cobertura / Corretivo (Whiteout)
+   ======================================================== */
+.whiteout-element {
+  position: absolute;
+  cursor: move;
+  border: 1.5px dashed #94a3b8;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  z-index: 15;
+  border-radius: 2px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.whiteout-element:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.whiteout-element.selected {
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
+}
+
+.whiteout-resize-handle {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background-color: #2563eb;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  cursor: se-resize;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.whiteout-delete-btn {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  background-color: #ef4444;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  cursor: pointer;
+  z-index: 20;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.12s ease;
+}
+
+.whiteout-delete-btn:hover {
+  transform: scale(1.15);
+  background-color: #dc2626;
+}
+
